@@ -49,7 +49,7 @@ public class ProductionDataSourceConfig {
                 String path = uri.getPath();
                 String query = uri.getQuery();
 
-                if (uri.getUserInfo() != null && (username == null || username.trim().isEmpty())) {
+                if (uri.getUserInfo() != null && (username == null || username.trim().isEmpty() || "postgres".equals(username))) {
                     String[] userInfo = uri.getUserInfo().split(":", 2);
                     username = userInfo[0];
                     if (userInfo.length > 1) {
