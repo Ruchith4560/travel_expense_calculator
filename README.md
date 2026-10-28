@@ -112,7 +112,7 @@ npm run build
 - [x] **Phase 3:** Interactive Trip Form with Real-Time Cost Preview & Category Distribution
 - [x] **Phase 4:** Full-Stack API Integration, Saved Trips Table/Card View, and Refresh Persistence
 - [x] **Phase 5:** SaaS UI/UX Polish, Multi-Type Toast System, Demo Presets, Search & Multi-Column Sorting
-- [ ] **Phase 6:** Automated Testing (JUnit 5, Mockito, MockMvc, Vitest)
+- [x] **Phase 6:** Automated Testing & Security Suite (34 automated tests across Backend & Frontend)
 - [ ] **Phase 7:** Optional Enhancements (Trip deletion, charts)
 - [ ] **Phase 8:** Cloud Deployment (Docker, PostgreSQL, Render/Vercel)
 - [ ] **Phase 9:** Technical Interview Mentor Guide & Portfolio Presentation
