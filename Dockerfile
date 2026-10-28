@@ -1,30 +1,44 @@
 # ==============================================================================
-# Root Dockerfile for Spring Boot REST API
-# Allows building directly from repository root context on cloud platforms (e.g. Render)
+# Unified Production Multi-Stage Dockerfile
+# Builds React TypeScript Frontend + Java 21 Spring Boot 3 Backend into One Full-Stack Container
 # ==============================================================================
 
-# Stage 1: Build application JAR
-FROM maven:3.9.6-eclipse-temurin-21-alpine AS builder
+# Stage 1: Build Frontend Assets
+FROM node:20-alpine AS frontend-builder
+WORKDIR /frontend
+
+COPY frontend/package*.json ./
+RUN npm install
+
+COPY frontend ./
+RUN npm run build
+
+# Stage 2: Build Spring Boot Application with bundled Frontend
+FROM maven:3.9.6-eclipse-temurin-21-alpine AS backend-builder
 WORKDIR /workspace
 
-# Copy backend pom and cache dependencies
+# Cache Maven dependencies
 COPY backend/pom.xml .
 RUN mvn dependency:go-offline -B
 
-# Copy backend source code and package executable JAR
+# Copy backend source
 COPY backend/src ./src
+
+# Inject compiled React bundle into Spring Boot's static resources
+COPY --from=frontend-builder /frontend/dist/ ./src/main/resources/static/
+
+# Package executable JAR
 RUN mvn package -DskipTests -B
 
-# Stage 2: Lightweight runtime environment
+# Stage 3: Minimal, secure Alpine runtime
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
-# Create unprivileged application user
+# Run as unprivileged user
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 USER appuser:appgroup
 
-# Copy compiled artifact
-COPY --from=builder /workspace/target/*.jar app.jar
+COPY --from=backend-builder /workspace/target/*.jar app.jar
 
 ENV PORT=8080
 ENV SPRING_PROFILES_ACTIVE=prod
