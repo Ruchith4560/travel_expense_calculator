@@ -109,7 +109,7 @@ npm run build
 - [x] **Phase 0:** Requirements analysis & technical specification
 - [x] **Phase 1:** Git repository initialization, Spring Boot 3 + Java 21, React + TypeScript + Tailwind scaffolding, multi-profile DB configuration
 - [x] **Phase 2:** Entity, DTOs, Repository, Service with `BigDecimal`, and REST Controller (18 unit & MockMvc tests passed)
-- [ ] **Phase 3:** Interactive Trip Form with Real-Time Cost Preview
+- [x] **Phase 3:** Interactive Trip Form with Real-Time Cost Preview & Category Distribution
 - [ ] **Phase 4:** Full-Stack API Integration and Saved Trips History Table
 - [ ] **Phase 5:** SaaS UI/UX Polish, KPI Metrics, Search/Filter, Empty States
 - [ ] **Phase 6:** Automated Testing (JUnit 5, Mockito, MockMvc, Vitest)
