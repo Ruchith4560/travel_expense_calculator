@@ -14,9 +14,10 @@ import {
   Loader2,
   ArrowUpDown,
   Sparkles,
+  Download,
 } from 'lucide-react';
 import { Trip } from '../types/trip';
-import { formatCurrency } from '../utils/calculator';
+import { formatCurrency, roundToTwoDecimals } from '../utils/calculator';
 
 interface SavedTripsListProps {
   trips: Trip[];
@@ -25,6 +26,7 @@ interface SavedTripsListProps {
   onRefresh: () => void;
   deletingId?: number | null;
   onSelectSample?: () => void;
+  onExportCsv?: () => void;
 }
 
 type SortOption = 'newest' | 'cost-desc' | 'cost-asc' | 'days-desc';
@@ -35,6 +37,7 @@ export const SavedTripsList: React.FC<SavedTripsListProps> = ({
   onDeleteTrip,
   deletingId,
   onSelectSample,
+  onExportCsv,
 }) => {
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
   const [sortBy, setSortBy] = useState<SortOption>('newest');
@@ -87,8 +90,21 @@ export const SavedTripsList: React.FC<SavedTripsListProps> = ({
           </p>
         </div>
 
-        {/* View Controls & Sort */}
+        {/* View Controls, Export & Sort */}
         <div className="flex flex-wrap items-center gap-2.5 self-start md:self-auto">
+          {/* Export CSV Button */}
+          {trips.length > 0 && onExportCsv && (
+            <button
+              type="button"
+              onClick={onExportCsv}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-xs transition cursor-pointer"
+              title="Download CSV spreadsheet"
+            >
+              <Download className="w-3.5 h-3.5 text-slate-500" />
+              <span>Export CSV</span>
+            </button>
+          )}
+
           {/* Sort Selector */}
           {trips.length > 1 && (
             <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-600">
@@ -175,113 +191,121 @@ export const SavedTripsList: React.FC<SavedTripsListProps> = ({
       ) : viewMode === 'cards' ? (
         /* Cards View */
         <div className="p-5 sm:p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-          {sortedTrips.map((trip) => (
-            <div
-              key={trip.id}
-              className="group relative rounded-xl border border-slate-200 hover:border-brand-300 hover:shadow-md transition-all p-5 bg-white flex flex-col justify-between"
-            >
-              <div>
-                {/* Trip Header */}
-                <div className="flex items-start justify-between gap-3 mb-3">
-                  <div>
-                    <h3 className="font-bold text-base text-slate-900 group-hover:text-brand-600 transition flex items-center gap-1.5">
-                      <MapPin className="w-4 h-4 text-brand-500 shrink-0" />
-                      <span>{trip.destination}</span>
-                    </h3>
-                    <div className="flex items-center gap-3 text-xs text-slate-500 mt-1">
-                      <span className="inline-flex items-center gap-1">
-                        <Calendar className="w-3 h-3" /> {trip.days} {trip.days === 1 ? 'day' : 'days'}
+          {sortedTrips.map((trip) => {
+            const dailyBurn = trip.days > 0 ? roundToTwoDecimals(trip.totalCost / trip.days) : 0;
+            return (
+              <div
+                key={trip.id}
+                className="group relative rounded-xl border border-slate-200 hover:border-brand-300 hover:shadow-md transition-all p-5 bg-white flex flex-col justify-between"
+              >
+                <div>
+                  {/* Trip Header */}
+                  <div className="flex items-start justify-between gap-3 mb-3">
+                    <div>
+                      <h3 className="font-bold text-base text-slate-900 group-hover:text-brand-600 transition flex items-center gap-1.5">
+                        <MapPin className="w-4 h-4 text-brand-500 shrink-0" />
+                        <span>{trip.destination}</span>
+                      </h3>
+                      <div className="flex items-center gap-3 text-xs text-slate-500 mt-1">
+                        <span className="inline-flex items-center gap-1">
+                          <Calendar className="w-3 h-3" /> {trip.days} {trip.days === 1 ? 'day' : 'days'}
+                        </span>
+                        <span className="inline-flex items-center gap-1">
+                          <Users className="w-3 h-3" /> {trip.travellers} {trip.travellers === 1 ? 'person' : 'people'}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col items-end gap-1">
+                      <span className="text-[11px] font-medium text-slate-400 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-100 whitespace-nowrap">
+                        {formatDate(trip.createdAt)}
                       </span>
-                      <span className="inline-flex items-center gap-1">
-                        <Users className="w-3 h-3" /> {trip.travellers} {trip.travellers === 1 ? 'person' : 'people'}
+                      <span className="text-[10px] font-semibold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded">
+                        {formatCurrency(dailyBurn)} / day
                       </span>
                     </div>
                   </div>
 
-                  <span className="text-[11px] font-medium text-slate-400 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-100 whitespace-nowrap">
-                    {formatDate(trip.createdAt)}
-                  </span>
+                  {/* Primary Cost Highlights */}
+                  <div className="grid grid-cols-2 gap-3 my-4 p-3 rounded-xl bg-slate-50/80 border border-slate-100">
+                    <div>
+                      <span className="text-[11px] font-medium text-slate-500 block">Total Trip Cost</span>
+                      <span className="text-lg font-bold text-slate-900">
+                        {formatCurrency(trip.totalCost)}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[11px] font-medium text-brand-600 block">Cost Per Person</span>
+                      <span className="text-lg font-bold text-brand-600">
+                        {formatCurrency(trip.costPerTraveller)}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Itemized Categories */}
+                  <div className="space-y-1.5 text-xs text-slate-600 pt-2 border-t border-slate-100">
+                    <div className="flex items-center justify-between">
+                      <span className="inline-flex items-center gap-1.5 text-slate-500">
+                        <Plane className="w-3.5 h-3.5 text-sky-500" /> Travel
+                      </span>
+                      <span className="font-medium text-slate-800">{formatCurrency(trip.travelExpense)}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="inline-flex items-center gap-1.5 text-slate-500">
+                        <Hotel className="w-3.5 h-3.5 text-indigo-500" /> Stay
+                      </span>
+                      <span className="font-medium text-slate-800">{formatCurrency(trip.accommodationExpense)}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="inline-flex items-center gap-1.5 text-slate-500">
+                        <Utensils className="w-3.5 h-3.5 text-amber-500" /> Food
+                      </span>
+                      <span className="font-medium text-slate-800">{formatCurrency(trip.foodExpense)}</span>
+                    </div>
+                  </div>
                 </div>
 
-                {/* Primary Cost Highlights */}
-                <div className="grid grid-cols-2 gap-3 my-4 p-3 rounded-xl bg-slate-50/80 border border-slate-100">
-                  <div>
-                    <span className="text-[11px] font-medium text-slate-500 block">Total Trip Cost</span>
-                    <span className="text-lg font-bold text-slate-900">
-                      {formatCurrency(trip.totalCost)}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-[11px] font-medium text-brand-600 block">Cost Per Person</span>
-                    <span className="text-lg font-bold text-brand-600">
-                      {formatCurrency(trip.costPerTraveller)}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Itemized Categories */}
-                <div className="space-y-1.5 text-xs text-slate-600 pt-2 border-t border-slate-100">
-                  <div className="flex items-center justify-between">
-                    <span className="inline-flex items-center gap-1.5 text-slate-500">
-                      <Plane className="w-3.5 h-3.5 text-sky-500" /> Travel
-                    </span>
-                    <span className="font-medium text-slate-800">{formatCurrency(trip.travelExpense)}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="inline-flex items-center gap-1.5 text-slate-500">
-                      <Hotel className="w-3.5 h-3.5 text-indigo-500" /> Stay
-                    </span>
-                    <span className="font-medium text-slate-800">{formatCurrency(trip.accommodationExpense)}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="inline-flex items-center gap-1.5 text-slate-500">
-                      <Utensils className="w-3.5 h-3.5 text-amber-500" /> Food
-                    </span>
-                    <span className="font-medium text-slate-800">{formatCurrency(trip.foodExpense)}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Actions Footer */}
-              <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-end">
-                {confirmDeleteId === trip.id ? (
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-rose-600 font-medium flex items-center gap-1">
-                      <AlertTriangle className="w-3.5 h-3.5" /> Confirm delete?
-                    </span>
+                {/* Actions Footer */}
+                <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-end">
+                  {confirmDeleteId === trip.id ? (
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-rose-600 font-medium flex items-center gap-1">
+                        <AlertTriangle className="w-3.5 h-3.5" /> Confirm delete?
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onDeleteTrip(trip.id);
+                          setConfirmDeleteId(null);
+                        }}
+                        disabled={deletingId === trip.id}
+                        className="px-2.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold transition cursor-pointer"
+                      >
+                        {deletingId === trip.id ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Yes'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setConfirmDeleteId(null)}
+                        className="px-2 py-1 rounded-lg border border-slate-200 text-xs text-slate-600 hover:bg-slate-50 transition cursor-pointer"
+                      >
+                        No
+                      </button>
+                    </div>
+                  ) : (
                     <button
                       type="button"
-                      onClick={() => {
-                        onDeleteTrip(trip.id);
-                        setConfirmDeleteId(null);
-                      }}
-                      disabled={deletingId === trip.id}
-                      className="px-2.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold transition cursor-pointer"
+                      onClick={() => setConfirmDeleteId(trip.id)}
+                      className="flex items-center gap-1 text-xs text-slate-400 hover:text-rose-600 transition px-2 py-1 rounded-md hover:bg-rose-50 cursor-pointer"
+                      title="Delete trip"
                     >
-                      {deletingId === trip.id ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Yes'}
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Delete</span>
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => setConfirmDeleteId(null)}
-                      className="px-2 py-1 rounded-lg border border-slate-200 text-xs text-slate-600 hover:bg-slate-50 transition cursor-pointer"
-                    >
-                      No
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => setConfirmDeleteId(trip.id)}
-                    className="flex items-center gap-1 text-xs text-slate-400 hover:text-rose-600 transition px-2 py-1 rounded-md hover:bg-rose-50 cursor-pointer"
-                    title="Delete trip"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                    <span>Delete</span>
-                  </button>
-                )}
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       ) : (
         /* Table View */
@@ -297,69 +321,76 @@ export const SavedTripsList: React.FC<SavedTripsListProps> = ({
                 <th className="py-3.5 px-4 font-semibold text-right">Food</th>
                 <th className="py-3.5 px-4 font-semibold text-right">Total Cost</th>
                 <th className="py-3.5 px-4 font-semibold text-right">Per Person</th>
+                <th className="py-3.5 px-4 font-semibold text-right">Per Day</th>
                 <th className="py-3.5 px-4 font-semibold text-center">Date</th>
                 <th className="py-3.5 px-4 font-semibold text-center">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-700">
-              {sortedTrips.map((trip) => (
-                <tr key={trip.id} className="hover:bg-slate-50/80 transition">
-                  <td className="py-3.5 px-4 font-semibold text-slate-900 flex items-center gap-1.5">
-                    <MapPin className="w-3.5 h-3.5 text-brand-600 shrink-0" />
-                    <span>{trip.destination}</span>
-                  </td>
-                  <td className="py-3.5 px-4 text-center text-xs">
-                    {trip.days} {trip.days === 1 ? 'day' : 'days'}
-                  </td>
-                  <td className="py-3.5 px-4 text-center text-xs">
-                    {trip.travellers} {trip.travellers === 1 ? 'person' : 'people'}
-                  </td>
-                  <td className="py-3.5 px-4 text-right font-mono text-xs">{formatCurrency(trip.travelExpense)}</td>
-                  <td className="py-3.5 px-4 text-right font-mono text-xs">{formatCurrency(trip.accommodationExpense)}</td>
-                  <td className="py-3.5 px-4 text-right font-mono text-xs">{formatCurrency(trip.foodExpense)}</td>
-                  <td className="py-3.5 px-4 text-right font-bold text-slate-900 font-mono">
-                    {formatCurrency(trip.totalCost)}
-                  </td>
-                  <td className="py-3.5 px-4 text-right font-bold text-brand-600 font-mono">
-                    {formatCurrency(trip.costPerTraveller)}
-                  </td>
-                  <td className="py-3.5 px-4 text-center text-xs text-slate-500 whitespace-nowrap">
-                    {formatDate(trip.createdAt)}
-                  </td>
-                  <td className="py-3.5 px-4 text-center">
-                    {confirmDeleteId === trip.id ? (
-                      <div className="flex items-center justify-center gap-1.5">
+              {sortedTrips.map((trip) => {
+                const dailyBurn = trip.days > 0 ? roundToTwoDecimals(trip.totalCost / trip.days) : 0;
+                return (
+                  <tr key={trip.id} className="hover:bg-slate-50/80 transition">
+                    <td className="py-3.5 px-4 font-semibold text-slate-900 flex items-center gap-1.5">
+                      <MapPin className="w-3.5 h-3.5 text-brand-600 shrink-0" />
+                      <span>{trip.destination}</span>
+                    </td>
+                    <td className="py-3.5 px-4 text-center text-xs">
+                      {trip.days} {trip.days === 1 ? 'day' : 'days'}
+                    </td>
+                    <td className="py-3.5 px-4 text-center text-xs">
+                      {trip.travellers} {trip.travellers === 1 ? 'person' : 'people'}
+                    </td>
+                    <td className="py-3.5 px-4 text-right font-mono text-xs">{formatCurrency(trip.travelExpense)}</td>
+                    <td className="py-3.5 px-4 text-right font-mono text-xs">{formatCurrency(trip.accommodationExpense)}</td>
+                    <td className="py-3.5 px-4 text-right font-mono text-xs">{formatCurrency(trip.foodExpense)}</td>
+                    <td className="py-3.5 px-4 text-right font-bold text-slate-900 font-mono">
+                      {formatCurrency(trip.totalCost)}
+                    </td>
+                    <td className="py-3.5 px-4 text-right font-bold text-brand-600 font-mono">
+                      {formatCurrency(trip.costPerTraveller)}
+                    </td>
+                    <td className="py-3.5 px-4 text-right text-xs font-mono text-slate-600">
+                      {formatCurrency(dailyBurn)}
+                    </td>
+                    <td className="py-3.5 px-4 text-center text-xs text-slate-500 whitespace-nowrap">
+                      {formatDate(trip.createdAt)}
+                    </td>
+                    <td className="py-3.5 px-4 text-center">
+                      {confirmDeleteId === trip.id ? (
+                        <div className="flex items-center justify-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              onDeleteTrip(trip.id);
+                              setConfirmDeleteId(null);
+                            }}
+                            className="px-2 py-0.5 rounded bg-rose-600 text-white text-xs font-semibold cursor-pointer"
+                          >
+                            Confirm
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setConfirmDeleteId(null)}
+                            className="px-1.5 py-0.5 rounded border border-slate-200 text-xs text-slate-600 cursor-pointer"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      ) : (
                         <button
                           type="button"
-                          onClick={() => {
-                            onDeleteTrip(trip.id);
-                            setConfirmDeleteId(null);
-                          }}
-                          className="px-2 py-0.5 rounded bg-rose-600 text-white text-xs font-semibold cursor-pointer"
+                          onClick={() => setConfirmDeleteId(trip.id)}
+                          className="text-slate-400 hover:text-rose-600 transition p-1 rounded hover:bg-rose-50 cursor-pointer inline-flex items-center justify-center"
+                          title="Delete trip"
                         >
-                          Confirm
+                          <Trash2 className="w-4 h-4" />
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => setConfirmDeleteId(null)}
-                          className="px-1.5 py-0.5 rounded border border-slate-200 text-xs text-slate-600 cursor-pointer"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => setConfirmDeleteId(trip.id)}
-                        className="text-slate-400 hover:text-rose-600 transition p-1 rounded hover:bg-rose-50 cursor-pointer inline-flex items-center justify-center"
-                        title="Delete trip"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

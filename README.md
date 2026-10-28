@@ -113,6 +113,6 @@ npm run build
 - [x] **Phase 4:** Full-Stack API Integration, Saved Trips Table/Card View, and Refresh Persistence
 - [x] **Phase 5:** SaaS UI/UX Polish, Multi-Type Toast System, Demo Presets, Search & Multi-Column Sorting
 - [x] **Phase 6:** Automated Testing & Security Suite (34 automated tests across Backend & Frontend)
-- [ ] **Phase 7:** Optional Enhancements (Trip deletion, charts)
+- [x] **Phase 7:** Optional Enhancements (Portfolio Allocation Visualizer, Daily Burn Rate Metric, CSV Export)
 - [ ] **Phase 8:** Cloud Deployment (Docker, PostgreSQL, Render/Vercel)
 - [ ] **Phase 9:** Technical Interview Mentor Guide & Portfolio Presentation

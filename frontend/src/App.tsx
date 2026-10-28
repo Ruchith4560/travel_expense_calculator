@@ -3,9 +3,11 @@ import { Header } from './components/Header';
 import { TripForm } from './components/TripForm';
 import { SavedTripsList } from './components/SavedTripsList';
 import { StatsCards } from './components/StatsCards';
+import { ExpenseAnalyticsCard } from './components/ExpenseAnalyticsCard';
 import { ToastContainer, ToastMessage } from './components/Toast';
 import { Trip, TripFormData } from './types/trip';
 import { tripApi } from './services/tripApi';
+import { exportTripsToCsv } from './utils/exportCsv';
 import {
   Sparkles,
   AlertCircle,
@@ -102,6 +104,16 @@ export default function App() {
     }
   };
 
+  // Handle CSV export
+  const handleExportCsv = () => {
+    if (trips.length === 0) {
+      addToast('info', 'No trips to export.');
+      return;
+    }
+    exportTripsToCsv(trips);
+    addToast('success', `Exported ${trips.length} trip records to CSV.`);
+  };
+
   // Filter trips by search query
   const filteredTrips = useMemo(() => {
     if (!searchQuery.trim()) return trips;
@@ -163,6 +175,9 @@ export default function App() {
         {/* Top KPI Metric Ribbon */}
         <StatsCards trips={trips} />
 
+        {/* Portfolio Expense Allocation Chart */}
+        <ExpenseAnalyticsCard trips={trips} />
+
         {/* Search & Filter Bar */}
         {trips.length > 0 && (
           <div className="bg-white rounded-xl p-3 border border-slate-200/80 shadow-xs flex items-center gap-3">
@@ -207,6 +222,7 @@ export default function App() {
               onDeleteTrip={handleDeleteTrip}
               onRefresh={loadTrips}
               deletingId={deletingId}
+              onExportCsv={handleExportCsv}
               onSelectSample={() => {
                 formRef.current?.scrollIntoView({ behavior: 'smooth' });
               }}
