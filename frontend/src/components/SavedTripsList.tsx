@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   MapPin,
   Calendar,
@@ -12,6 +12,8 @@ import {
   AlertTriangle,
   FolderOpen,
   Loader2,
+  ArrowUpDown,
+  Sparkles,
 } from 'lucide-react';
 import { Trip } from '../types/trip';
 import { formatCurrency } from '../utils/calculator';
@@ -22,15 +24,20 @@ interface SavedTripsListProps {
   onDeleteTrip: (id: number) => Promise<void>;
   onRefresh: () => void;
   deletingId?: number | null;
+  onSelectSample?: () => void;
 }
+
+type SortOption = 'newest' | 'cost-desc' | 'cost-asc' | 'days-desc';
 
 export const SavedTripsList: React.FC<SavedTripsListProps> = ({
   trips,
   isLoading,
   onDeleteTrip,
   deletingId,
+  onSelectSample,
 }) => {
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
+  const [sortBy, setSortBy] = useState<SortOption>('newest');
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
 
   const formatDate = (dateString: string) => {
@@ -46,10 +53,28 @@ export const SavedTripsList: React.FC<SavedTripsListProps> = ({
     }
   };
 
+  // Sort trips
+  const sortedTrips = useMemo(() => {
+    const list = [...trips];
+    switch (sortBy) {
+      case 'cost-desc':
+        return list.sort((a, b) => Number(b.totalCost) - Number(a.totalCost));
+      case 'cost-asc':
+        return list.sort((a, b) => Number(a.totalCost) - Number(b.totalCost));
+      case 'days-desc':
+        return list.sort((a, b) => Number(b.days) - Number(a.days));
+      case 'newest':
+      default:
+        return list.sort(
+          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+    }
+  }, [trips, sortBy]);
+
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+    <div className="bg-white rounded-2xl shadow-xs border border-slate-200/80 overflow-hidden">
       {/* List Header */}
-      <div className="p-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="p-5 sm:p-6 border-b border-slate-100 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
             <h2 className="text-lg font-bold text-slate-900 tracking-tight">Saved Trips & Summaries</h2>
@@ -58,36 +83,56 @@ export const SavedTripsList: React.FC<SavedTripsListProps> = ({
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-0.5">
-            Persisted in PostgreSQL database • Ordered newest first
+            Persisted in PostgreSQL database • Calculated on Spring Boot backend
           </p>
         </div>
 
-        {/* View Toggle */}
-        <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl self-start sm:self-auto">
-          <button
-            type="button"
-            onClick={() => setViewMode('cards')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
-              viewMode === 'cards'
-                ? 'bg-white text-slate-900 shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <LayoutGrid className="w-3.5 h-3.5" />
-            <span>Cards</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setViewMode('table')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
-              viewMode === 'table'
-                ? 'bg-white text-slate-900 shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <TableIcon className="w-3.5 h-3.5" />
-            <span>Table</span>
-          </button>
+        {/* View Controls & Sort */}
+        <div className="flex flex-wrap items-center gap-2.5 self-start md:self-auto">
+          {/* Sort Selector */}
+          {trips.length > 1 && (
+            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-600">
+              <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as SortOption)}
+                className="bg-transparent font-medium text-slate-700 outline-none cursor-pointer text-xs"
+              >
+                <option value="newest">Newest First</option>
+                <option value="cost-desc">Total: High to Low</option>
+                <option value="cost-asc">Total: Low to High</option>
+                <option value="days-desc">Longest Duration</option>
+              </select>
+            </div>
+          )}
+
+          {/* View Mode Toggle */}
+          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
+            <button
+              type="button"
+              onClick={() => setViewMode('cards')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
+                viewMode === 'cards'
+                  ? 'bg-white text-slate-900 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <LayoutGrid className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Cards</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('table')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
+                viewMode === 'table'
+                  ? 'bg-white text-slate-900 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <TableIcon className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Table</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -116,11 +161,21 @@ export const SavedTripsList: React.FC<SavedTripsListProps> = ({
           <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1 mb-6">
             You haven't logged any trips yet. Enter your trip parameters and expenses on the left to save your first calculation!
           </p>
+          {onSelectSample && (
+            <button
+              type="button"
+              onClick={onSelectSample}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-50 hover:bg-brand-100 text-brand-700 text-xs font-semibold border border-brand-200 transition cursor-pointer"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Load Goa Sample Data</span>
+            </button>
+          )}
         </div>
       ) : viewMode === 'cards' ? (
         /* Cards View */
-        <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-          {trips.map((trip) => (
+        <div className="p-5 sm:p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+          {sortedTrips.map((trip) => (
             <div
               key={trip.id}
               className="group relative rounded-xl border border-slate-200 hover:border-brand-300 hover:shadow-md transition-all p-5 bg-white flex flex-col justify-between"
@@ -143,13 +198,13 @@ export const SavedTripsList: React.FC<SavedTripsListProps> = ({
                     </div>
                   </div>
 
-                  <span className="text-[11px] font-medium text-slate-400 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-100">
+                  <span className="text-[11px] font-medium text-slate-400 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-100 whitespace-nowrap">
                     {formatDate(trip.createdAt)}
                   </span>
                 </div>
 
                 {/* Primary Cost Highlights */}
-                <div className="grid grid-cols-2 gap-3 my-4 p-3 rounded-xl bg-slate-50 border border-slate-100">
+                <div className="grid grid-cols-2 gap-3 my-4 p-3 rounded-xl bg-slate-50/80 border border-slate-100">
                   <div>
                     <span className="text-[11px] font-medium text-slate-500 block">Total Trip Cost</span>
                     <span className="text-lg font-bold text-slate-900">
@@ -247,7 +302,7 @@ export const SavedTripsList: React.FC<SavedTripsListProps> = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-700">
-              {trips.map((trip) => (
+              {sortedTrips.map((trip) => (
                 <tr key={trip.id} className="hover:bg-slate-50/80 transition">
                   <td className="py-3.5 px-4 font-semibold text-slate-900 flex items-center gap-1.5">
                     <MapPin className="w-3.5 h-3.5 text-brand-600 shrink-0" />

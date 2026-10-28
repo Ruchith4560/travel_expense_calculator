@@ -10,6 +10,7 @@ import {
   RotateCcw,
   AlertCircle,
   Loader2,
+  Sparkles,
 } from 'lucide-react';
 import { FormErrors, TripFormData } from '../types/trip';
 import { calculateTripSummary, validateTripForm } from '../utils/calculator';
@@ -30,6 +31,42 @@ const initialFormState: TripFormData = {
   accommodationExpense: 8000,
   foodExpense: 3000,
 };
+
+const presets: { label: string; data: TripFormData }[] = [
+  {
+    label: 'Goa Getaway (Report Example)',
+    data: {
+      destination: 'Goa',
+      days: 4,
+      travellers: 2,
+      travelExpense: 6000,
+      accommodationExpense: 8000,
+      foodExpense: 3000,
+    },
+  },
+  {
+    label: 'Solo Trek',
+    data: {
+      destination: 'Manali',
+      days: 5,
+      travellers: 1,
+      travelExpense: 3500,
+      accommodationExpense: 5000,
+      foodExpense: 2500,
+    },
+  },
+  {
+    label: 'Friends Trip',
+    data: {
+      destination: 'Jaipur',
+      days: 3,
+      travellers: 4,
+      travelExpense: 8000,
+      accommodationExpense: 12000,
+      foodExpense: 6000,
+    },
+  },
+];
 
 export const TripForm: React.FC<TripFormProps> = ({
   onSubmit,
@@ -80,6 +117,12 @@ export const TripForm: React.FC<TripFormProps> = ({
     setTouched((prev) => ({ ...prev, [field]: true }));
   };
 
+  const handleApplyPreset = (presetData: TripFormData) => {
+    setFormData(presetData);
+    setTouched({});
+    if (onClearErrors) onClearErrors();
+  };
+
   const handleReset = () => {
     setFormData({
       destination: '',
@@ -96,7 +139,6 @@ export const TripForm: React.FC<TripFormProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Mark all fields touched
     setTouched({
       destination: true,
       days: true,
@@ -115,27 +157,47 @@ export const TripForm: React.FC<TripFormProps> = ({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-slate-200">
-        <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-6">
+      <div className="bg-white rounded-2xl p-5 sm:p-7 shadow-xs border border-slate-200/80">
+        <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-5">
           <div>
             <h2 className="text-lg font-bold text-slate-900 tracking-tight">Create Trip & Estimate</h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              Enter trip parameters and expense categories to calculate authoritative totals
+              Enter trip parameters to calculate authoritative totals
             </p>
           </div>
           <button
             type="button"
             onClick={handleReset}
-            className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-800 px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 transition"
+            className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-800 px-2.5 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 transition cursor-pointer"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             <span>Reset</span>
           </button>
         </div>
 
+        {/* Quick Presets for Demo Reviewers */}
+        <div className="mb-5 pb-4 border-b border-slate-100">
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 mb-2">
+            <Sparkles className="w-3.5 h-3.5 text-brand-600" />
+            <span>Quick Demo Presets:</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {presets.map((p) => (
+              <button
+                key={p.label}
+                type="button"
+                onClick={() => handleApplyPreset(p.data)}
+                className="text-xs font-medium px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-brand-50 hover:text-brand-700 hover:border-brand-200 border border-transparent transition cursor-pointer text-slate-700"
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Section 1: Trip Parameters */}
         <div className="space-y-4 mb-6">
-          <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
             1. Trip Parameters
           </h3>
 
@@ -143,7 +205,7 @@ export const TripForm: React.FC<TripFormProps> = ({
             <label htmlFor="destination" className="block text-xs font-semibold text-slate-700 mb-1.5">
               Destination City / Country <span className="text-rose-500">*</span>
             </label>
-            <div className="relative rounded-xl shadow-sm">
+            <div className="relative rounded-xl shadow-xs">
               <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
                 <MapPin className="w-4 h-4" />
               </div>
@@ -155,7 +217,7 @@ export const TripForm: React.FC<TripFormProps> = ({
                 onChange={handleChange}
                 onBlur={() => handleBlur('destination')}
                 placeholder="e.g. Goa, India or Paris, France"
-                className={`block w-full rounded-xl pl-9 pr-4 py-2.5 text-sm bg-slate-50 border transition focus:bg-white focus:outline-none focus:ring-2 ${
+                className={`block w-full rounded-xl pl-9 pr-4 py-2.5 text-sm bg-slate-50/70 border transition focus:bg-white focus:outline-none focus:ring-2 ${
                   touched.destination && errors.destination
                     ? 'border-rose-300 text-rose-900 focus:ring-rose-500 focus:border-rose-500'
                     : 'border-slate-200 text-slate-900 focus:ring-brand-500 focus:border-brand-500'
@@ -179,7 +241,7 @@ export const TripForm: React.FC<TripFormProps> = ({
               <label htmlFor="days" className="block text-xs font-semibold text-slate-700 mb-1.5">
                 Trip Duration (Days) <span className="text-rose-500">*</span>
               </label>
-              <div className="relative rounded-xl shadow-sm">
+              <div className="relative rounded-xl shadow-xs">
                 <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
                   <Calendar className="w-4 h-4" />
                 </div>
@@ -192,7 +254,7 @@ export const TripForm: React.FC<TripFormProps> = ({
                   value={formData.days}
                   onChange={handleChange}
                   onBlur={() => handleBlur('days')}
-                  className={`block w-full rounded-xl pl-9 pr-4 py-2.5 text-sm bg-slate-50 border transition focus:bg-white focus:outline-none focus:ring-2 ${
+                  className={`block w-full rounded-xl pl-9 pr-4 py-2.5 text-sm bg-slate-50/70 border transition focus:bg-white focus:outline-none focus:ring-2 ${
                     touched.days && errors.days
                       ? 'border-rose-300 text-rose-900 focus:ring-rose-500 focus:border-rose-500'
                       : 'border-slate-200 text-slate-900 focus:ring-brand-500 focus:border-brand-500'
@@ -210,7 +272,7 @@ export const TripForm: React.FC<TripFormProps> = ({
               <label htmlFor="travellers" className="block text-xs font-semibold text-slate-700 mb-1.5">
                 Number of Travellers <span className="text-rose-500">*</span>
               </label>
-              <div className="relative rounded-xl shadow-sm">
+              <div className="relative rounded-xl shadow-xs">
                 <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
                   <Users className="w-4 h-4" />
                 </div>
@@ -223,7 +285,7 @@ export const TripForm: React.FC<TripFormProps> = ({
                   value={formData.travellers}
                   onChange={handleChange}
                   onBlur={() => handleBlur('travellers')}
-                  className={`block w-full rounded-xl pl-9 pr-4 py-2.5 text-sm bg-slate-50 border transition focus:bg-white focus:outline-none focus:ring-2 ${
+                  className={`block w-full rounded-xl pl-9 pr-4 py-2.5 text-sm bg-slate-50/70 border transition focus:bg-white focus:outline-none focus:ring-2 ${
                     touched.travellers && errors.travellers
                       ? 'border-rose-300 text-rose-900 focus:ring-rose-500 focus:border-rose-500'
                       : 'border-slate-200 text-slate-900 focus:ring-brand-500 focus:border-brand-500'
@@ -242,11 +304,11 @@ export const TripForm: React.FC<TripFormProps> = ({
         {/* Section 2: Expense Breakdown */}
         <div className="space-y-4 pt-4 border-t border-slate-100">
           <div className="flex items-center justify-between">
-            <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
               2. Total Trip Expenses
             </h3>
             <span className="text-[11px] text-slate-400">
-              Enter total combined amounts for the trip
+              Total combined expense for the journey
             </span>
           </div>
 
@@ -256,7 +318,7 @@ export const TripForm: React.FC<TripFormProps> = ({
               <label htmlFor="travelExpense" className="block text-xs font-semibold text-slate-700 mb-1.5">
                 Travel / Transit <span className="text-rose-500">*</span>
               </label>
-              <div className="relative rounded-xl shadow-sm">
+              <div className="relative rounded-xl shadow-xs">
                 <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
                   <Plane className="w-4 h-4" />
                 </div>
@@ -269,7 +331,7 @@ export const TripForm: React.FC<TripFormProps> = ({
                   value={formData.travelExpense}
                   onChange={handleChange}
                   onBlur={() => handleBlur('travelExpense')}
-                  className={`block w-full rounded-xl pl-9 pr-4 py-2.5 text-sm bg-slate-50 border transition focus:bg-white focus:outline-none focus:ring-2 ${
+                  className={`block w-full rounded-xl pl-9 pr-4 py-2.5 text-sm bg-slate-50/70 border transition focus:bg-white focus:outline-none focus:ring-2 ${
                     touched.travelExpense && errors.travelExpense
                       ? 'border-rose-300 text-rose-900 focus:ring-rose-500 focus:border-rose-500'
                       : 'border-slate-200 text-slate-900 focus:ring-brand-500 focus:border-brand-500'
@@ -288,7 +350,7 @@ export const TripForm: React.FC<TripFormProps> = ({
               <label htmlFor="accommodationExpense" className="block text-xs font-semibold text-slate-700 mb-1.5">
                 Accommodation <span className="text-rose-500">*</span>
               </label>
-              <div className="relative rounded-xl shadow-sm">
+              <div className="relative rounded-xl shadow-xs">
                 <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
                   <Hotel className="w-4 h-4" />
                 </div>
@@ -301,7 +363,7 @@ export const TripForm: React.FC<TripFormProps> = ({
                   value={formData.accommodationExpense}
                   onChange={handleChange}
                   onBlur={() => handleBlur('accommodationExpense')}
-                  className={`block w-full rounded-xl pl-9 pr-4 py-2.5 text-sm bg-slate-50 border transition focus:bg-white focus:outline-none focus:ring-2 ${
+                  className={`block w-full rounded-xl pl-9 pr-4 py-2.5 text-sm bg-slate-50/70 border transition focus:bg-white focus:outline-none focus:ring-2 ${
                     touched.accommodationExpense && errors.accommodationExpense
                       ? 'border-rose-300 text-rose-900 focus:ring-rose-500 focus:border-rose-500'
                       : 'border-slate-200 text-slate-900 focus:ring-brand-500 focus:border-brand-500'
@@ -320,7 +382,7 @@ export const TripForm: React.FC<TripFormProps> = ({
               <label htmlFor="foodExpense" className="block text-xs font-semibold text-slate-700 mb-1.5">
                 Food & Dining <span className="text-rose-500">*</span>
               </label>
-              <div className="relative rounded-xl shadow-sm">
+              <div className="relative rounded-xl shadow-xs">
                 <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
                   <Utensils className="w-4 h-4" />
                 </div>
@@ -333,7 +395,7 @@ export const TripForm: React.FC<TripFormProps> = ({
                   value={formData.foodExpense}
                   onChange={handleChange}
                   onBlur={() => handleBlur('foodExpense')}
-                  className={`block w-full rounded-xl pl-9 pr-4 py-2.5 text-sm bg-slate-50 border transition focus:bg-white focus:outline-none focus:ring-2 ${
+                  className={`block w-full rounded-xl pl-9 pr-4 py-2.5 text-sm bg-slate-50/70 border transition focus:bg-white focus:outline-none focus:ring-2 ${
                     touched.foodExpense && errors.foodExpense
                       ? 'border-rose-300 text-rose-900 focus:ring-rose-500 focus:border-rose-500'
                       : 'border-slate-200 text-slate-900 focus:ring-brand-500 focus:border-brand-500'
@@ -364,7 +426,7 @@ export const TripForm: React.FC<TripFormProps> = ({
             {isLoading ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Saving to Database...</span>
+                <span>Persisting to Database...</span>
               </>
             ) : (
               <>

@@ -111,7 +111,7 @@ npm run build
 - [x] **Phase 2:** Entity, DTOs, Repository, Service with `BigDecimal`, and REST Controller (18 unit & MockMvc tests passed)
 - [x] **Phase 3:** Interactive Trip Form with Real-Time Cost Preview & Category Distribution
 - [x] **Phase 4:** Full-Stack API Integration, Saved Trips Table/Card View, and Refresh Persistence
-- [ ] **Phase 5:** SaaS UI/UX Polish, KPI Metrics, Search/Filter, Empty States
+- [x] **Phase 5:** SaaS UI/UX Polish, Multi-Type Toast System, Demo Presets, Search & Multi-Column Sorting
 - [ ] **Phase 6:** Automated Testing (JUnit 5, Mockito, MockMvc, Vitest)
 - [ ] **Phase 7:** Optional Enhancements (Trip deletion, charts)
 - [ ] **Phase 8:** Cloud Deployment (Docker, PostgreSQL, Render/Vercel)

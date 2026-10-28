@@ -1,17 +1,14 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Header } from './components/Header';
 import { TripForm } from './components/TripForm';
 import { SavedTripsList } from './components/SavedTripsList';
+import { StatsCards } from './components/StatsCards';
+import { ToastContainer, ToastMessage } from './components/Toast';
 import { Trip, TripFormData } from './types/trip';
 import { tripApi } from './services/tripApi';
-import { formatCurrency } from './utils/calculator';
 import {
   Sparkles,
-  CheckCircle2,
   AlertCircle,
-  TrendingUp,
-  Users,
-  Compass,
   RefreshCw,
   Search,
 } from 'lucide-react';
@@ -24,9 +21,23 @@ export default function App() {
   const [apiStatus, setApiStatus] = useState<'connected' | 'connecting' | 'error'>('connecting');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
-  const [successToast, setSuccessToast] = useState<string | null>(null);
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [serverValidationErrors, setServerValidationErrors] = useState<Record<string, string>>({});
+
+  const formRef = useRef<HTMLDivElement>(null);
+
+  const addToast = (type: 'success' | 'error' | 'info', message: string) => {
+    const id = Date.now().toString() + Math.random().toString(36).substring(2, 5);
+    setToasts((prev) => [...prev, { id, type, message }]);
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, 4500);
+  };
+
+  const removeToast = (id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  };
 
   // Load trips from backend on component mount
   const loadTrips = async () => {
@@ -40,6 +51,7 @@ export default function App() {
       setApiStatus('error');
       const { message } = tripApi.extractApiError(err);
       setErrorMessage(message);
+      addToast('error', `Failed to load trips: ${message}`);
     } finally {
       setIsLoadingTrips(false);
     }
@@ -57,16 +69,18 @@ export default function App() {
 
     try {
       const createdTrip = await tripApi.createTrip(formData);
-      // Prepend the new trip returned from server
       setTrips((prev) => [createdTrip, ...prev]);
-      setSuccessToast(`Trip to "${createdTrip.destination}" saved and calculated successfully!`);
-      setTimeout(() => setSuccessToast(null), 5000);
+      addToast(
+        'success',
+        `Trip to "${createdTrip.destination}" saved with authoritative total: ${createdTrip.totalCost}`
+      );
     } catch (err) {
       const { message, validationErrors } = tripApi.extractApiError(err);
       if (validationErrors) {
         setServerValidationErrors(validationErrors);
       }
       setErrorMessage(message);
+      addToast('error', message);
     } finally {
       setIsSubmitting(false);
     }
@@ -78,28 +92,17 @@ export default function App() {
     try {
       await tripApi.deleteTrip(id);
       setTrips((prev) => prev.filter((t) => t.id !== id));
-      setSuccessToast('Trip record removed successfully.');
-      setTimeout(() => setSuccessToast(null), 4000);
+      addToast('info', 'Trip record deleted from database.');
     } catch (err) {
       const { message } = tripApi.extractApiError(err);
       setErrorMessage(`Failed to delete trip: ${message}`);
+      addToast('error', `Delete failed: ${message}`);
     } finally {
       setDeletingId(null);
     }
   };
 
-  // KPI Calculations
-  const totalExpenditure = useMemo(() => {
-    return trips.reduce((sum, t) => sum + Number(t.totalCost || 0), 0);
-  }, [trips]);
-
-  const avgCostPerTraveller = useMemo(() => {
-    if (trips.length === 0) return 0;
-    const sum = trips.reduce((acc, t) => acc + Number(t.costPerTraveller || 0), 0);
-    return Math.round((sum / trips.length) * 100) / 100;
-  }, [trips]);
-
-  // Filter trips by destination search query
+  // Filter trips by search query
   const filteredTrips = useMemo(() => {
     if (!searchQuery.trim()) return trips;
     const q = searchQuery.toLowerCase().trim();
@@ -110,8 +113,8 @@ export default function App() {
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
       <Header apiStatus={apiStatus} />
 
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-        {/* Hero Section & Headline */}
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8">
+        {/* Hero Section */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div className="max-w-2xl">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-brand-50 text-brand-700 border border-brand-200 mb-3">
@@ -141,24 +144,9 @@ export default function App() {
           </button>
         </div>
 
-        {/* Global Feedback Banners */}
-        {successToast && (
-          <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 flex items-center justify-between shadow-sm animate-fade-in">
-            <div className="flex items-center gap-2.5">
-              <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-              <span className="text-sm font-medium">{successToast}</span>
-            </div>
-            <button
-              onClick={() => setSuccessToast(null)}
-              className="text-xs text-emerald-600 hover:text-emerald-900 font-semibold cursor-pointer"
-            >
-              Dismiss
-            </button>
-          </div>
-        )}
-
+        {/* Global Error Banner if backend is unavailable */}
         {errorMessage && (
-          <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 flex items-center justify-between shadow-sm animate-fade-in">
+          <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 flex items-center justify-between shadow-xs animate-fade-in">
             <div className="flex items-center gap-2.5">
               <AlertCircle className="w-5 h-5 text-rose-600 shrink-0" />
               <span className="text-sm font-medium">{errorMessage}</span>
@@ -173,51 +161,17 @@ export default function App() {
         )}
 
         {/* Top KPI Metric Ribbon */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-brand-50 flex items-center justify-center text-brand-600 shrink-0 border border-brand-100">
-              <Compass className="w-6 h-6" />
-            </div>
-            <div>
-              <span className="text-xs font-medium text-slate-500 block">Total Trips Saved</span>
-              <span className="text-2xl font-extrabold text-slate-900">{trips.length}</span>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0 border border-emerald-100">
-              <TrendingUp className="w-6 h-6" />
-            </div>
-            <div>
-              <span className="text-xs font-medium text-slate-500 block">Cumulative Expenses</span>
-              <span className="text-2xl font-extrabold text-slate-900">
-                {formatCurrency(totalExpenditure)}
-              </span>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 shrink-0 border border-indigo-100">
-              <Users className="w-6 h-6" />
-            </div>
-            <div>
-              <span className="text-xs font-medium text-slate-500 block">Avg. Cost / Traveller</span>
-              <span className="text-2xl font-extrabold text-indigo-600">
-                {formatCurrency(avgCostPerTraveller)}
-              </span>
-            </div>
-          </div>
-        </div>
+        <StatsCards trips={trips} />
 
         {/* Search & Filter Bar */}
         {trips.length > 0 && (
-          <div className="bg-white rounded-xl p-3 border border-slate-200 flex items-center gap-3">
+          <div className="bg-white rounded-xl p-3 border border-slate-200/80 shadow-xs flex items-center gap-3">
             <Search className="w-4 h-4 text-slate-400 ml-2 shrink-0" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Filter saved trips by destination (e.g. 'Goa', 'Paris')..."
+              placeholder="Search saved trips by destination (e.g. 'Goa', 'Paris')..."
               className="w-full text-sm bg-transparent outline-none placeholder:text-slate-400 text-slate-800"
             />
             {searchQuery && (
@@ -229,12 +183,15 @@ export default function App() {
                 Clear
               </button>
             )}
+            <span className="text-xs text-slate-400 shrink-0 pr-2">
+              Showing {filteredTrips.length} of {trips.length}
+            </span>
           </div>
         )}
 
         {/* Main Application Layout: Form (Left) & Saved Trips (Right) */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          <div className="lg:col-span-5">
+          <div ref={formRef} className="lg:col-span-5">
             <TripForm
               onSubmit={handleCreateTrip}
               isLoading={isSubmitting}
@@ -250,10 +207,16 @@ export default function App() {
               onDeleteTrip={handleDeleteTrip}
               onRefresh={loadTrips}
               deletingId={deletingId}
+              onSelectSample={() => {
+                formRef.current?.scrollIntoView({ behavior: 'smooth' });
+              }}
             />
           </div>
         </div>
       </main>
+
+      {/* Floating Toast Notification Container */}
+      <ToastContainer toasts={toasts} onDismiss={removeToast} />
     </div>
   );
 }
