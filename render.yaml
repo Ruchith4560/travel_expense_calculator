@@ -2,12 +2,14 @@
 # Render Blueprint Specification (Infrastructure-as-Code)
 # ==============================================================================
 services:
-  # Spring Boot REST API
+  # ----------------------------------------------------------------------------
+  # 1. Spring Boot REST API (Dockerized Web Service)
+  # ----------------------------------------------------------------------------
   - type: web
-    name: voyageledger-api
+    name: travel-expense-backend
     env: docker
-    dockerContext: ./backend
-    dockerfilePath: ./backend/Dockerfile
+    rootDir: backend
+    dockerfilePath: Dockerfile
     plan: free
     region: oregon
     healthCheckPath: /actuator/health
@@ -16,17 +18,20 @@ services:
         value: prod
       - key: DATABASE_URL
         fromDatabase:
-          name: voyageledger-db
+          name: travel-expense-db
           property: connectionString
       - key: CORS_ALLOWED_ORIGINS
-        value: https://voyageledger.vercel.app,https://voyageledger.onrender.com
+        value: http://localhost:5173,http://localhost:3000,https://travel-expense-frontend.onrender.com
 
-  # React Static Web Application
+  # ----------------------------------------------------------------------------
+  # 2. React Vite Single Page Application (Static Site)
+  # ----------------------------------------------------------------------------
   - type: web
-    name: voyageledger-web
+    name: travel-expense-frontend
     env: static
-    buildCommand: cd frontend && npm install && npm run build
-    staticPublishPath: ./frontend/dist
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
     plan: free
     region: oregon
     routes:
@@ -37,12 +42,14 @@ services:
       - key: VITE_API_BASE_URL
         fromService:
           type: web
-          name: voyageledger-api
+          name: travel-expense-backend
           property: host
 
-# Cloud PostgreSQL Managed Database
+# ------------------------------------------------------------------------------
+# 3. Cloud PostgreSQL Managed Database
+# ------------------------------------------------------------------------------
 databases:
-  - name: voyageledger-db
+  - name: travel-expense-db
     databaseName: travelexpensedb
     user: postgres
     plan: free

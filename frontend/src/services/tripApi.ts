@@ -1,9 +1,19 @@
 import axios, { AxiosError } from 'axios';
 import { ApiErrorResponse, Trip, TripFormData } from '../types/trip';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
-  ? `${import.meta.env.VITE_API_BASE_URL}/api`
-  : '/api';
+function resolveApiBaseUrl(): string {
+  let rawUrl = import.meta.env.VITE_API_BASE_URL?.trim();
+  if (!rawUrl) {
+    return '/api';
+  }
+  if (!rawUrl.startsWith('http://') && !rawUrl.startsWith('https://')) {
+    rawUrl = `https://${rawUrl}`;
+  }
+  rawUrl = rawUrl.replace(/\/+$/, '');
+  return rawUrl.endsWith('/api') ? rawUrl : `${rawUrl}/api`;
+}
+
+const API_BASE_URL = resolveApiBaseUrl();
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
