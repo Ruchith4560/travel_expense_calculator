@@ -1,0 +1,10 @@
+#!/bin/sh
+# ----------------------------------------------------------------------------
+# Maven Start Up Shell script for Travel Expense Calculator
+# ----------------------------------------------------------------------------
+if command -v mvn >/dev/null 2>&1; then
+    exec mvn "$@"
+else
+    echo "[ERROR] Maven command 'mvn' not found on PATH. Please install Apache Maven." >&2
+    exit 1
+fi
