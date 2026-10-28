@@ -108,7 +108,7 @@ npm run build
 ## 📌 Phase Completion Status
 - [x] **Phase 0:** Requirements analysis & technical specification
 - [x] **Phase 1:** Git repository initialization, Spring Boot 3 + Java 21, React + TypeScript + Tailwind scaffolding, multi-profile DB configuration
-- [ ] **Phase 2:** Entity, DTOs, Repository, Service with `BigDecimal`, and REST Controller
+- [x] **Phase 2:** Entity, DTOs, Repository, Service with `BigDecimal`, and REST Controller (18 unit & MockMvc tests passed)
 - [ ] **Phase 3:** Interactive Trip Form with Real-Time Cost Preview
 - [ ] **Phase 4:** Full-Stack API Integration and Saved Trips History Table
 - [ ] **Phase 5:** SaaS UI/UX Polish, KPI Metrics, Search/Filter, Empty States
