@@ -9,7 +9,8 @@ services:
     name: travel-expense-backend
     env: docker
     rootDir: backend
-    dockerfilePath: Dockerfile
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
     plan: free
     region: oregon
     healthCheckPath: /actuator/health
